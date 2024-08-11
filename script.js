@@ -3,9 +3,11 @@ const orderBtn = document.getElementById("orderBtn");
 const message = document.getElementById("preOrderMessage");
 let currentOrder = document.getElementById('order');
 let cakeImage = document.getElementById("preOrderImage");
+const incrementButtons = document.querySelectorAll(".increment-button");
+const decrementButtons = document.querySelectorAll(".decrement-button");
 let cart = []; //initializing the cart items to empty array
 
-function addToCart(item) {
+/*function addToCart(item) {
     // Find the item in the cart
     const existingItem = cart.find(cartItem => cartItem.name === item.name);
 
@@ -20,9 +22,23 @@ function addToCart(item) {
     }
 
     updateCartDisplay(); // Update the cart display
+}*/
+
+function addToCart(item, quantity) {
+    // check if the item already exists in the cart
+    const existingItem = cart.find(cartItem => cartItem.name === item.name);
+
+    if (existingItem) {
+        // if the item exists, increase the quantity and update the total price
+        existingItem.quantity += quantity;
+        existingItem.totalPrice = (existingItem.quantity * existingItem.price).toFixed(2);
+    } else {
+        // If the item doesn't exist, add it with the specified quantity and total price
+        cart.push({...item, quantity: quantity, totalPrice: (quantity * item.price).toFixed(2)});
+    }
+
+    updateCartDisplay(); // Update the cart display
 }
-
-
 // Function to display the items that are ordered
 function updateCartDisplay() {
     if (cart.length === 0) { // Check if the cart is empty
@@ -52,7 +68,14 @@ addToCartButtons.forEach(button => { //using forEach because this function appli
         const itemElement = event.target.closest('.item'); //find the closest element with class item(its the parent container that houses the  add to cart buttons and also other information about the dessert being orderred)
         const itemName = itemElement.querySelector("#dessertName").innerText; //get the name of the dessert in the same container as the button
         const itemPrice = parseFloat(itemElement.querySelector("#price").innerText.replace('$', '')); //get price of the item and also remove dollar sign since I've used parsefloat for easier calculation
-        addToCart({ name: itemName, price: itemPrice }); //add the element to the cart
+        const quantityElement = itemElement.querySelector('.quantity-display');//get the span element that displays quantity
+        const quantity = parseInt(quantityElement.innerText);//get the quantity as an integer
+        if(quantity > 0){
+            addToCart({ name: itemName, price: itemPrice },quantity); //add the element to the cart
+        }else{
+            alert("please input the quantity before adding to the cart");
+        }
+    
     });
 });
 
@@ -65,3 +88,47 @@ function showOrderConfirmation() {
 
 }
 orderBtn.addEventListener("click", showOrderConfirmation);
+
+// Function to update the quantity display
+function updateQuantityDisplay(quantityElement, quantity) {
+    quantityElement.innerText = quantity;
+}
+// adding event listeners to increment buttons
+incrementButtons.forEach(button => {
+    button.addEventListener("click", (event) => {
+        const itemElement = event.target.closest('.item'); // find the closest container with class item
+        const quantityElement = itemElement.querySelector('.quantity-display');//get the span element that shows quantity
+        let currentQuantity = parseInt(quantityElement.innerText); // get the current quantity
+        currentQuantity++; // increment the quantity
+        updateQuantityDisplay(quantityElement, currentQuantity); // update the display
+    });
+});
+
+// adding event listeners to decrement buttons
+decrementButtons.forEach(button => {
+    button.addEventListener("click", (event) => {
+        const itemElement = event.target.closest('.item'); // find the closest container with class item
+        const itemName = itemElement.querySelector("#dessertName").innerText; // get the name of the dessert in the same container as the button
+        const quantityElement = itemElement.querySelector('.quantity-display'); //get the span element that shows quantity
+        let currentQuantity = parseInt(quantityElement.innerText); // get the current quantity
+        
+        if (currentQuantity > 0) { // ensure quantity doesn't go below 0
+            currentQuantity--; // decrement the quantity
+            updateQuantityDisplay(quantityElement, currentQuantity); // update the display
+
+            // remove the item from the cart if it's already there
+            const existingItem = cart.find(cartItem => cartItem.name === itemName);
+            if (existingItem) {
+                if (currentQuantity === 0) {
+                    // remove the item from the cart if the quantity is zero
+                    cart = cart.filter(cartItem => cartItem.name !== itemName);
+                } else {
+                    // update the quantity and total price in the cart
+                    existingItem.quantity = currentQuantity;
+                    existingItem.totalPrice = (existingItem.quantity * existingItem.price).toFixed(2);
+                }
+                updateCartDisplay(); // Update the cart display
+            }
+        }
+    });
+});
